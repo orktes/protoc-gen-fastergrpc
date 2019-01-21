@@ -19,9 +19,10 @@ const (
 type server struct{}
 
 // Echo implements EchoService.Echo
-func (s *server) Echo(ctx context.Context, in *EchoRequest, out *EchoResponse) error {
+func (s *server) Echo(ctx context.Context, in *EchoRequest) (*EchoResponse, error) {
+	out := &EchoResponse{}
 	out.Message = in.Message
-	return nil
+	return out, nil
 }
 
 func main() {

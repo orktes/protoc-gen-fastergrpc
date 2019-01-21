@@ -6,11 +6,10 @@ package main
 import (
 	context "context"
 	fmt "fmt"
-	math "math"
-	sync "sync"
-
 	proto "github.com/gogo/protobuf/proto"
 	google_golang_org_grpc "google.golang.org/grpc"
+	math "math"
+	sync "sync"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -28,8 +27,8 @@ var _ sync.Pool
 const _ = google_golang_org_grpc.SupportPackageIsVersion4
 
 type _Echo_Echo_Pool_Struct struct {
-	in  EchoRequest
-	out EchoResponse
+	in EchoRequest
+	// out EchoResponse
 }
 
 var _Echo_Echo_Pool = sync.Pool{
@@ -64,7 +63,7 @@ func (c *echoClient) Echo(ctx context.Context, in *EchoRequest, opts ...google_g
 
 // EchoServer is the server API for Echo service.
 type EchoServer interface {
-	Echo(context.Context, *EchoRequest, *EchoResponse) error
+	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
 }
 
 func RegisterEchoServer(s *google_golang_org_grpc.Server, srv EchoServer) {
@@ -75,19 +74,18 @@ func _Echo_Echo_Handler(srv interface{}, ctx context.Context, dec func(interface
 	d := _Echo_Echo_Pool.Get().(*_Echo_Echo_Pool_Struct)
 	defer _Echo_Echo_Pool.Put(d)
 	in := &d.in
-	out := &d.out
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return out, srv.(EchoServer).Echo(ctx, in, out)
+		return srv.(EchoServer).Echo(ctx, in)
 	}
 	info := &google_golang_org_grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/Echo/Echo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return out, srv.(EchoServer).Echo(ctx, req.(*EchoRequest), out)
+		return srv.(EchoServer).Echo(ctx, req.(*EchoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

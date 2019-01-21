@@ -383,11 +383,10 @@ func (g *grpc) generateServerSignature(servName string, method *pb.MethodDescrip
 	ret := "error"
 	if !method.GetServerStreaming() && !method.GetClientStreaming() {
 		reqArgs = append(reqArgs, contextPkg.Use()+".Context")
-		ret = "error"
+		ret = "(*" + g.typeName(method.GetOutputType()) + ", error)"
 	}
 	if !method.GetClientStreaming() {
 		reqArgs = append(reqArgs, "*"+g.typeName(method.GetInputType()))
-		reqArgs = append(reqArgs, "*"+g.typeName(method.GetOutputType()))
 	}
 	if method.GetServerStreaming() || method.GetClientStreaming() {
 		reqArgs = append(reqArgs, servName+"_"+generator.CamelCase(origMethName)+"Server")
@@ -409,15 +408,14 @@ func (g *grpc) generateServerMethod(servName, fullServName string, method *pb.Me
 		g.P("d := ", pname, ".Get().(*", psname, ")")
 		g.P("defer ", pname, ".Put(d)")
 		g.P("in := &d.in")
-		g.P("out := &d.out")
 		g.P("if err := dec(in); err != nil { return nil, err }")
-		g.P("if interceptor == nil { return out, srv.(", servName, "Server).", methName, "(ctx, in, out) }")
+		g.P("if interceptor == nil { return srv.(", servName, "Server).", methName, "(ctx, in) }")
 		g.P("info := &", grpcPkg.Use(), ".UnaryServerInfo{")
 		g.P("Server: srv,")
 		g.P("FullMethod: ", strconv.Quote(fmt.Sprintf("/%s/%s", fullServName, methName)), ",")
 		g.P("}")
 		g.P("handler := func(ctx ", contextPkg.Use(), ".Context, req interface{}) (interface{}, error) {")
-		g.P("return out, srv.(", servName, "Server).", methName, "(ctx, req.(*", inType, "), out)")
+		g.P("return srv.(", servName, "Server).", methName, "(ctx, req.(*", inType, "))")
 		g.P("}")
 		g.P("return interceptor(ctx, in, info, handler)")
 		g.P("}")
@@ -499,7 +497,7 @@ func (g *grpc) generateMemoryPools(file *generator.FileDescriptor) {
 			g.P(fmt.Sprintf(`
 type %s struct {
 	in  %s
-	out %s
+	// out %s
 }
 			`, structName, inType, outType))
 
